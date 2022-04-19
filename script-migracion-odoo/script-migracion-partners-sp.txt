@@ -1,0 +1,103 @@
+#!/usr/bin/python
+# encoding: utf-8
+
+import xmlrpclib
+
+usernameFrom = 'odoo'                  # Odoo From user
+pwdFrom = 'odoo'                       # Odoo From password
+dbFrom = 'FibrasGestion'                         # Odoo From base de datos
+urlFrom = 'http://10.0.1.17:8069'       # Odoo From URL
+
+usernameTo = 'odoo'                    # Odoo To user
+pwdTo = 'odoo'                         # Odoo To password
+dbTo = 'gestionfn'                           # Odoo To base de datos
+urlTo = 'http://10.0.0.188:8069'         # Odoo To URL
+
+cont_ok = 0
+cont_error = 0
+
+valsFrom = {'fields': ['id', 'active', 'name', 'company_type', 'street', 'street2', 'city', 'state_id', 'responsability_id', 'zip', 
+		'country_id', 'website', 'function', 'phone', 'mobile', 'email', 'title', 'lang', 'comment', 'customer', 
+		'supplier', 'notify_email', 'vat', 'document_type_id', 'document_number', 'property_product_pricelist',
+            'x_Plandepago', 'x_MorosoNoCobrable', 'x_cbu', 'x_td_visa', 'x_tc_visa', 'ref']}
+
+commonFrom = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(urlFrom))
+commonFrom.version()
+uidFrom = commonFrom.authenticate(dbFrom, usernameFrom, pwdFrom, {})
+
+commonTo = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(urlTo))
+commonTo.version()
+uidTo = commonTo.authenticate(dbTo, usernameTo, pwdTo, {})
+
+modelsFrom = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(urlFrom))
+modelsTo = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(urlTo))
+partner_ids_from = modelsFrom.execute_kw(dbFrom, uidFrom, pwdFrom, 'res.partner', 'search', [[]])   # Ajustar dominio de búsqueda de acuerdo a las necesidades
+
+print(partner_ids_from)
+
+for partner_id in partner_ids_from:
+    print(partner_id)
+    from_partner = modelsFrom.execute_kw(dbFrom, uidFrom, pwdFrom, 'res.partner', 'read', [partner_id], valsFrom)
+
+    print(from_partner[0])
+
+    if from_partner[0]['state_id']:
+        state_id = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.country.state', 'search', [[['name', '=', from_partner[0]['state_id'][1]]]], {'limit': 1})
+        if state_id == 67:
+            state_id = 565 # Mendoza es 565
+	  else:
+            state_id = state_id[0]
+    else:
+        state_id = False
+
+    if from_partner[0]['country_id']:
+        country_id = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.country', 'search', [[['name', '=', from_partner[0]['country_id'][1]]]], {'limit': 1})
+        if country_id == 11:
+		country_id = 10 # Argentina es 10 
+	  else:
+     	      country_id = country_id[0]
+    else:
+        country_id = False
+
+    property_product_pricelist_from = 1
+    
+    try:
+        to_partner = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.partner', 'create', [{
+           'active': from_partner['active']
+           'name': from_partner['name'], 
+           'property_product_pricelist': property_product_pricelist_from,
+           'street': from_partner['street'],
+           'street2': from_partner['street2'],
+           'city': from_partner['city'],
+           'state_id': state_id,
+           'country_id': country_id,
+           'phone': from_partner[0]['phone'],
+           'mobile': from_partner[0]['mobile'],
+           'email': from_partner[0]['email'],
+           'afip_responsability_type_id': from_partner[0]['responsability_id'],
+           'main_id_category_id': from_partner[0]['document_type_id'],
+           'main_id_number': from_partner[0]['document_number'],
+           'zip': from_partner[0]['zip'],
+           'website': from_partner[0]['website'],
+           'function': from_partner[0]['function'],
+           'title': from_partner[0]['title'],
+           'lang': from_partner[0]['lang'],
+           'comment': from_partner[0]['comment'],
+           'customer': from_partner[0]['customer'],
+           'supplier': from_partner[0]['supplier'],
+           'notify_email': from_partner[0]['notify_email'],
+           'vat': from_partner[0]['vat'],
+           'x_Plandepago': from_partner[0]['x_Plandepago'],
+           'x_MorosoNoCobrable': from_partner[0]['x_td_visa'],
+           'x_tc_visa': from_partner[0]['x_tc_visa'],
+           'x_cbu': from_partner[0]['x_cbu'],
+           'x_nro_cliente': from_partner[0]['ref']
+	     'x_id_anterior': from_partner[0]['id'],
+        print("OK: ", from_partner['name'])
+        cont_ok += 1
+    except:
+        print("Error: ", from_partner['name'])
+        cont_error += 1
+    }])
+print("Partners creados: ", cont_ok)
+print("Errores: ", cont_error)
