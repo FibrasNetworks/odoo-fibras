@@ -37,6 +37,7 @@ print(partner_ids_from)
 
 for partner_id in partner_ids_from:
     print(partner_id)
+
     from_partner = modelsFrom.execute_kw(dbFrom, uidFrom, pwdFrom, 'res.partner', 'read', [partner_id], valsFrom)
 
     print(from_partner[0])
@@ -45,59 +46,68 @@ for partner_id in partner_ids_from:
         state_id = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.country.state', 'search', [[['name', '=', from_partner[0]['state_id'][1]]]], {'limit': 1})
         if state_id == 67:
             state_id = 565 # Mendoza es 565
-	  else:
-            state_id = state_id[0]
+    else:
+        state_id = state_id[0]
     else:
         state_id = False
 
     if from_partner[0]['country_id']:
         country_id = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.country', 'search', [[['name', '=', from_partner[0]['country_id'][1]]]], {'limit': 1})
         if country_id == 11:
-		country_id = 10 # Argentina es 10 
-	  else:
-     	      country_id = country_id[0]
+            country_id = 10 # Argentina es 10 
+    else:
+     	  country_id = country_id[0]
     else:
         country_id = False
-
-    property_product_pricelist_from = 1
     
-    try:
-        to_partner = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.partner', 'create', [{
-           'active': from_partner['active']
-           'name': from_partner['name'], 
-           'property_product_pricelist': property_product_pricelist_from,
-           'street': from_partner['street'],
-           'street2': from_partner['street2'],
-           'city': from_partner['city'],
-           'state_id': state_id,
-           'country_id': country_id,
-           'phone': from_partner[0]['phone'],
-           'mobile': from_partner[0]['mobile'],
-           'email': from_partner[0]['email'],
-           'afip_responsability_type_id': from_partner[0]['responsability_id'],
-           'main_id_category_id': from_partner[0]['document_type_id'],
-           'main_id_number': from_partner[0]['document_number'],
-           'zip': from_partner[0]['zip'],
-           'website': from_partner[0]['website'],
-           'function': from_partner[0]['function'],
-           'title': from_partner[0]['title'],
-           'lang': from_partner[0]['lang'],
-           'comment': from_partner[0]['comment'],
-           'customer': from_partner[0]['customer'],
-           'supplier': from_partner[0]['supplier'],
-           'notify_email': from_partner[0]['notify_email'],
-           'vat': from_partner[0]['vat'],
-           'x_Plandepago': from_partner[0]['x_Plandepago'],
-           'x_MorosoNoCobrable': from_partner[0]['x_td_visa'],
-           'x_tc_visa': from_partner[0]['x_tc_visa'],
-           'x_cbu': from_partner[0]['x_cbu'],
-           'x_nro_cliente': from_partner[0]['ref']
-	     'x_id_anterior': from_partner[0]['id'],
-        print("OK: ", from_partner['name'])
-        cont_ok += 1
-    except:
-        print("Error: ", from_partner['name'])
-        cont_error += 1
+	property_product_pricelist_from = 1
+    
+    # REVISO SI EXISTE EL PARTNER EN ODOO 15
+    partner_id_to = modelsFrom.execute_kw(dbTo, uidTo, pwdTo, 'res.partner', 'search', [['x_id_anterior','=',partner_id]]
+
+    if not partner_id_to: #Si no existe no lo importo
+
+        try:
+            to_partner = modelsTo.execute_kw(dbTo, uidTo, pwdTo, 'res.partner', 'create', [{
+               'active': from_partner['active']
+               'name': from_partner['name'], 
+               'property_product_pricelist': property_product_pricelist_from,
+               'street': from_partner['street'],
+               'street2': from_partner['street2'],
+               'city': from_partner['city'],
+               'state_id': state_id,
+               'country_id': country_id,
+               'phone': from_partner[0]['phone'],
+               'mobile': from_partner[0]['mobile'],
+               'email': from_partner[0]['email'],
+               'afip_responsability_type_id': from_partner[0]['responsability_id'],
+               'main_id_category_id': from_partner[0]['document_type_id'],
+               'main_id_number': from_partner[0]['document_number'],
+               'zip': from_partner[0]['zip'],
+               'website': from_partner[0]['website'],
+               'function': from_partner[0]['function'],
+               'title': from_partner[0]['title'],
+               'lang': from_partner[0]['lang'],
+               'comment': from_partner[0]['comment'],
+               'customer': from_partner[0]['customer'],
+               'supplier': from_partner[0]['supplier'],
+               'notify_email': from_partner[0]['notify_email'],
+               'vat': from_partner[0]['vat'],
+               'x_plandepago': from_partner[0]['x_Plandepago'],
+               'x_morosonocobrable': from_partner[0]['x_td_visa'],
+               'x_tc_visa': from_partner[0]['x_tc_visa'],
+               'x_cbu': from_partner[0]['x_cbu'],
+               'ref': from_partner[0]['ref']
+	         'x_id_anterior': from_partner[0]['id'],
+            print("OK: ", from_partner['name'])
+            cont_ok += 1
+        except:
+            print("Error: ", from_partner['name'])
+            cont_error += 1
+    else:
+        print("Existe: ", from_partner['name'])
+        cont_exist +=1
     }])
+print("Partner ya existentes: ", cont_exist)
 print("Partners creados: ", cont_ok)
 print("Errores: ", cont_error)
